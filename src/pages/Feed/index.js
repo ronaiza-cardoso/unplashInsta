@@ -74,9 +74,7 @@ export default function Feed () {
                             source={{ uri: item.image }} 
                             smallSource={{ uri: item.small }}
                         />
-                        <PostDescription>
-                            <Name>{item.author.name}</Name> {item.description}
-                        </PostDescription>
+                        <PostDescription>{item.description}</PostDescription>
                     </Post>
                 )}
             />
