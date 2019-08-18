@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, FlatList } from 'react-native'
 
-import { Post, Header, Avatar, Name, PostImage, PostDescription, Loading } from './style'
+import { Post, Header, Avatar, Name, PostDescription, Loading } from './style'
+import LazyImage from '../components/LazyImage';
 
 export default function Feed () {
     const [feed, setFeed] = useState([])
@@ -9,6 +10,7 @@ export default function Feed () {
     const [total, setTotal] = useState(0)
     const [loading, setLoading] = useState(false)
     const [refreshing, setReshing] = useState(false)
+    const [viewable, setViewable] = useState([])
 
     async function loadPage(pageNumber = page, shouldRefresh = false) {
         if(total && pageNumber > total) return
@@ -39,6 +41,14 @@ export default function Feed () {
         setReshing(false)
     }
 
+    /*
+     * FlatList just accept functions that are chached
+     * because that we are using useCallback to memo this function
+     */
+    const handleVieablechanged = useCallback(({ changed }) => {
+        setViewable(changed.map(({ item }) => item.id))
+    }, [])
+
     return (
         <View>
             <FlatList 
@@ -48,6 +58,8 @@ export default function Feed () {
                 onEndReachedThreshold={0.1}
                 onRefresh={refreshList}
                 refreshing={refreshing}
+                onViewableItemsChanged={handleVieablechanged}
+                viewabilityConfig={{ viewAreaCoveragePercentThreshold: 20 }}
                 ListFooterComponent={loading && <Loading/>}
                 renderItem={({ item }) => (
                     <Post>
@@ -55,7 +67,13 @@ export default function Feed () {
                             <Avatar ratio={item.aspectRatio} source={{ uri: item.author.avatar }}/>
                             <Name>{item.author.name}</Name>
                         </Header>
-                        <PostImage ratio={item.aspectRatio} source={{ uri: item.image }} />
+                        <LazyImage
+                            shouldLoad={viewable.includes(item.id)}
+                            viewable={viewable}
+                            aspectRatio={item.aspectRatio} 
+                            source={{ uri: item.image }} 
+                            smallSource={{ uri: item.small }}
+                        />
                         <PostDescription>
                             <Name>{item.author.name}</Name> {item.description}
                         </PostDescription>
